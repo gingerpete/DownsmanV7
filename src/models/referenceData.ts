@@ -7,12 +7,16 @@ export const HIKE_CLASSES = [
   'V-Class',
   'E-Class',
   'B-Class',
-  'Open, Bigor - Washington',
-  'Open, Bigor - Steyning',
+  'Open, Bignor - Washington',
+  'Open, Bignor - Steyning',
   'Open, Plumpton - Itford',
   'Open, Plumpton - Firle',
   'Open, Itford - Eastbourne',
+  'Open, Beaver Itford to Bo Peep',
 ] as const;
+
+// The one class with a different entry fee - see ENTRY_COST / BEAVER_TEAM_FEE below.
+export const BEAVER_CLASS = 'Open, Beaver Itford to Bo Peep';
 
 // Sourced from an env var, not hardcoded, because this changes every season and a
 // forgotten hardcoded date silently miscalculates every age-based validation rule
@@ -32,4 +36,7 @@ function parseHikeDate(raw: string | undefined): LocalDate {
 }
 
 export const HIKE_DATE: LocalDate = parseHikeDate(process.env.NEXT_PUBLIC_DM_HIKE_DATE);
-export const ENTRY_COST = 10;
+// Every entrant pays this, except Beaver teams which pay one flat BEAVER_TEAM_FEE
+// per team regardless of team size - see getEntranceFee in utils/validation.ts.
+export const ENTRY_COST = 16;
+export const BEAVER_TEAM_FEE = 10;

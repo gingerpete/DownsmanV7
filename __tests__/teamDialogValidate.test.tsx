@@ -16,7 +16,7 @@ function validTeam(): TeamModel {
     id: 'team-1',
     ownerID: 'user-1',
     teamName: 'Test Team',
-    hikeClass: 'Open, Bigor - Washington',
+    hikeClass: 'Open, Bignor - Washington',
     activeMobile: '07777',
     backupMobile: '07888',
     emergencyContactName: 'EC Name',

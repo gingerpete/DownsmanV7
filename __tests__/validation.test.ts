@@ -1,6 +1,6 @@
 import { validateTeam, getEntranceFee, getPaymentStatus } from '@/utils/validation';
 import { TeamModel, ScoutModel, SupportModel } from '@/models/types';
-import { HIKE_DATE, ENTRY_COST } from '@/models/referenceData';
+import { HIKE_DATE, ENTRY_COST, BEAVER_CLASS, BEAVER_TEAM_FEE } from '@/models/referenceData';
 import { dateToEpochDay } from '@/utils/date';
 
 // Helper: create a scout with age at hike date
@@ -73,7 +73,7 @@ describe('validateTeam - mandatory fields', () => {
 });
 
 describe('validateTeam - Open Class', () => {
-  const openClass = 'Open, Bigor - Washington';
+  const openClass = 'Open, Bignor - Washington';
 
   it('accepts valid team of 3-6', () => {
     const team = baseTeam(openClass);
@@ -344,18 +344,25 @@ describe('validateTeam - V-Class', () => {
 });
 
 describe('getEntranceFee', () => {
-  it('charges per non-leader scout', () => {
+  it('charges per non-leader scout at the standard rate', () => {
     const scouts = [scoutWithAge(14), scoutWithAge(14), scoutWithAge(14)];
-    expect(getEntranceFee(scouts)).toBe(3 * ENTRY_COST);
+    expect(getEntranceFee('A-Class', scouts)).toBe(3 * ENTRY_COST);
   });
 
   it('does not charge for leaders', () => {
     const scouts = [scoutWithAge(14), scoutWithAge(14), leaderScout()];
-    expect(getEntranceFee(scouts)).toBe(2 * ENTRY_COST);
+    expect(getEntranceFee('A-Class', scouts)).toBe(2 * ENTRY_COST);
   });
 
   it('returns 0 for empty team', () => {
-    expect(getEntranceFee([])).toBe(0);
+    expect(getEntranceFee('A-Class', [])).toBe(0);
+  });
+
+  it('charges a flat £10 per Beaver team, regardless of team size', () => {
+    const twoScouts = [scoutWithAge(7), scoutWithAge(7)];
+    const fourScouts = [scoutWithAge(7), scoutWithAge(7), scoutWithAge(8), scoutWithAge(6)];
+    expect(getEntranceFee(BEAVER_CLASS, twoScouts)).toBe(BEAVER_TEAM_FEE);
+    expect(getEntranceFee(BEAVER_CLASS, fourScouts)).toBe(BEAVER_TEAM_FEE);
   });
 });
 

@@ -42,7 +42,7 @@ function scoutWithAge(age: number): ScoutModel {
 function validOpenClassTeam(overrides: Partial<TeamModel> = {}): Partial<TeamModel> {
   return {
     teamName: 'Test Team',
-    hikeClass: 'Open, Bigor - Washington',
+    hikeClass: 'Open, Bignor - Washington',
     activeMobile: '07777',
     backupMobile: '07888',
     emergencyContactName: 'EC Name',

@@ -1,5 +1,5 @@
 import { ScoutModel, TeamModel, SupportModel } from '../models/types';
-import { HIKE_DATE, ENTRY_COST } from '../models/referenceData';
+import { HIKE_DATE, BEAVER_CLASS, ENTRY_COST, BEAVER_TEAM_FEE } from '../models/referenceData';
 import { calculateAge } from './date';
 
 function nullOrEmpty(s: string | undefined | null): boolean {
@@ -46,8 +46,9 @@ export function validateTeam(model: TeamModel, scouts: ScoutModel[], support: Su
   }
 
   const openClasses = [
-    'Open, Bigor - Washington', 'Open, Bigor - Steyning',
-    'Open, Plumpton - Firle', 'Open, Plumpton - Itford', 'Open, Itford - Eastbourne'
+    'Open, Bignor - Washington', 'Open, Bignor - Steyning',
+    'Open, Plumpton - Firle', 'Open, Plumpton - Itford', 'Open, Itford - Eastbourne',
+    BEAVER_CLASS,
   ];
 
   if (openClasses.includes(hikeClass)) {
@@ -88,12 +89,13 @@ export function validateTeam(model: TeamModel, scouts: ScoutModel[], support: Su
   return results;
 }
 
-export function getEntranceFee(scouts: ScoutModel[]): number {
+export function getEntranceFee(hikeClass: string | undefined, scouts: ScoutModel[]): number {
+  if (hikeClass === BEAVER_CLASS) return BEAVER_TEAM_FEE;
   return scouts.filter(s => !s.leader).length * ENTRY_COST;
 }
 
 export function getPaymentStatus(team: TeamModel, scouts: ScoutModel[]): string {
   if (team.paymentRecieved) return 'Paid';
-  if (team.paymentAmount > 0) return `Partial (£${team.paymentAmount} of £${getEntranceFee(scouts)})`;
+  if (team.paymentAmount > 0) return `Partial (£${team.paymentAmount} of £${getEntranceFee(team.hikeClass, scouts)})`;
   return 'Unpaid';
 }
