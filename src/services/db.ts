@@ -8,7 +8,7 @@ const isDev = process.env.DM_DEV !== 'false';
 const client = new DynamoDBClient(
   isDev
     ? { endpoint: 'http://localhost:8000', region: 'eu-west-2' }
-    : { region: 'eu-west-2' }
+    : { region: 'eu-north-1' }
 );
 
 const db = DynamoDBDocumentClient.from(client);

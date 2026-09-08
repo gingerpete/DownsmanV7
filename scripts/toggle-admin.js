@@ -18,7 +18,7 @@ const {
   UserNotFoundException,
 } = require('@aws-sdk/client-cognito-identity-provider');
 
-const REGION = 'eu-west-2';
+const REGION = 'eu-north-1';
 const GROUP = 'admin';
 
 const env = process.argv[2];

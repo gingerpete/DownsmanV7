@@ -12,7 +12,7 @@ if (env !== 'dev' && env !== 'prod') {
   process.exit(1);
 }
 
-const REGION = 'eu-west-2';
+const REGION = 'eu-north-1';
 const POOL_NAME = `Downsman-${env}`;
 const CLIENT_NAME = `Downsman-${env}-client`;
 
