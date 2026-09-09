@@ -21,6 +21,7 @@ export default function RegisterDialog({ onClose }: Props) {
 
   const submit = async () => {
     if (password !== confirm) { setError('Passwords do not match'); return; }
+    if (!/^[^\s]+$/.test(username)) { setError('Username cannot contain spaces'); return; }
     setError('');
     setLoading(true);
     try {
@@ -48,7 +49,10 @@ export default function RegisterDialog({ onClose }: Props) {
     <Modal title="Register" onClose={onClose}>
       {error && <Banner tone="error">{error}</Banner>}
       <div className="space-y-3">
-        <input className={inputClass} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+         <div>
+          <input className={inputClass} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+          <p className="mt-1 text-xs text-gray-400">No spaces - use a single word, e.g. johnsmith</p>
+        </div>
         <input className={inputClass} placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
         <input className={inputClass} placeholder="Phone" value={mobile} onChange={e => setMobile(e.target.value)} />
         <input className={inputClass} type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
