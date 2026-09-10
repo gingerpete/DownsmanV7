@@ -1,0 +1,22 @@
+diff --git a/scripts/create-tables.js b/scripts/create-tables.js
+index 02fbe65..d6d2318 100644
+--- a/scripts/create-tables.js
++++ b/scripts/create-tables.js
+@@ -1,6 +1,16 @@
+ const { DynamoDBClient, CreateTableCommand } = require('@aws-sdk/client-dynamodb');
+ 
+-const client = new DynamoDBClient({ endpoint: 'http://localhost:8000', region: 'eu-west-2' });
++const env = process.argv[2];
++if (env !== 'dev' && env !== 'prod') {
++  console.error('Usage: node scripts/create-tables.js <dev|prod>');
++  process.exit(1);
++}
++
++// dev uses the local Docker DynamoDB container from start-local.sh; prod uses
++// real AWS DynamoDB in your configured account/region (via `aws configure`).
++const client = env === 'dev'
++  ? new DynamoDBClient({ endpoint: 'http://localhost:8000', region: 'eu-west-2' })
++  : new DynamoDBClient({ region: 'eu-west-2' });
+ 
+ const tables = [
+   {
