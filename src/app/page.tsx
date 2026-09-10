@@ -118,7 +118,10 @@ export default function Home() {
   if (!user) {
     return (
       <main className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Downsman</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <img src="/downsman-logo.png" alt="Sussex Downsman Hike logo" className="w-16 h-16" />
+          <h1 className="text-3xl font-bold">The Sussex Downsman Hike 2026 - Sign Up</h1>
+        </div>
         {process.env.NEXT_PUBLIC_DM_DEV === 'true' && (
           <p className="text-yellow-400 mb-4">This is DEVELOPMENT</p>
         )}
@@ -137,7 +140,10 @@ export default function Home() {
   return (
     <main className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Downsman</h1>
+        <div className="flex items-center gap-3">
+          <img src="/downsman-logo.png" alt="Sussex Downsman Hike logo" className="w-12 h-12" />
+          <h1 className="text-2xl font-bold">The Sussex Downsman Hike 2026</h1>
+        </div>
         <div className="flex items-center gap-4">
           {process.env.NEXT_PUBLIC_DM_DEV === 'true' && <span className="text-yellow-400">DEV</span>}
           {effectiveLocked && <span className="text-red-400">LOCKED</span>}
