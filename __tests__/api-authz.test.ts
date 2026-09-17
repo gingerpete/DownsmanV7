@@ -21,6 +21,7 @@ jest.mock('@/services/db', () => ({
 
 jest.mock('@/services/cognito', () => ({
   listUsers: jest.fn(),
+  getEmailBySub: jest.fn().mockResolvedValue('leader@example.com'),
 }));
 
 import * as db from '@/services/db';
@@ -30,6 +31,7 @@ import { POST as scoutsPost } from '@/app/api/scouts/route';
 import { POST as supportPost } from '@/app/api/support/route';
 import { GET as adminGet } from '@/app/api/admin/route';
 import { GET as adminConfigGet } from '@/app/api/admin/config/route';
+import { GET as adminExportGet } from '@/app/api/admin/export/route';
 import { HIKE_DATE } from '@/models/referenceData';
 import { dateToEpochDay } from '@/utils/date';
 import { TeamModel, ScoutModel } from '@/models/types';
@@ -281,5 +283,53 @@ describe('admin config route authorization', () => {
       expect.objectContaining({ key: 'COGNITO_USER_POOL_ID' }),
       expect.objectContaining({ key: 'DM_BANKDETS' }),
     ]));
+  });
+});
+describe('admin export route authorization', () => {
+  it('GET is forbidden without the admin group', async () => {
+    const r = req('http://localhost/api/admin/export', { ownerId: 'user-1', groups: '' });
+    const res = await adminExportGet(r);
+    expect(res.status).toBe(403);
+    expect(db.getAllTeams).not.toHaveBeenCalled();
+  });
+
+  it('GET succeeds with the admin group, returns a CSV, and touches no write functions', async () => {
+    (db.getAllTeams as jest.Mock).mockResolvedValue([
+      validOpenClassTeam({ id: 'team-1', ownerID: 'owner-1', teamName: 'Alpha Pack', paymentAmount: 0, paymentRecieved: false }),
+    ]);
+    (db.getScoutsByOwner as jest.Mock).mockResolvedValue([scoutWithAge(14), scoutWithAge(14)]);
+    (cognito.getEmailBySub as jest.Mock).mockResolvedValue('leader@example.com');
+
+    const r = req('http://localhost/api/admin/export', { ownerId: 'user-1', groups: 'admin' });
+    const res = await adminExportGet(r);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toContain('text/csv');
+    const csv = await res.text();
+    expect(csv).toContain('Alpha Pack');
+    expect(csv).toContain('leader@example.com');
+    expect(csv.split('\n')[0]).toBe(
+      'Team Name,Class,Leader Name,Account Email,Active Mobile,Backup Mobile,Group,District,County,Entry Fee,Amount Paid,Paid In Full,Amount Owed,Submitted'
+    );
+
+    // Read-only: exporting must never touch anything that writes or deletes data.
+    expect(db.saveTeam).not.toHaveBeenCalled();
+    expect(db.deleteTeam).not.toHaveBeenCalled();
+    expect(db.saveScout).not.toHaveBeenCalled();
+    expect(db.deleteScout).not.toHaveBeenCalled();
+  });
+
+  it('a failed email lookup for one team does not break the whole export', async () => {
+    (db.getAllTeams as jest.Mock).mockResolvedValue([
+      validOpenClassTeam({ id: 'team-1', ownerID: 'owner-1', teamName: 'Beta Pack' }),
+    ]);
+    (cognito.getEmailBySub as jest.Mock).mockRejectedValue(new Error('Cognito unavailable'));
+
+    const r = req('http://localhost/api/admin/export', { ownerId: 'user-1', groups: 'admin' });
+    const res = await adminExportGet(r);
+
+    expect(res.status).toBe(200);
+    const csv = await res.text();
+    expect(csv).toContain('Beta Pack');
   });
 });

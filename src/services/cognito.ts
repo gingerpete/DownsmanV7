@@ -204,6 +204,19 @@ async function listAllPages<T extends { Users?: unknown[] }>(
   return items as NonNullable<T['Users']>;
 }
 
+// Used to find where to send a team-confirmation email: the session only
+// carries the Cognito sub (see lib/authz.ts), not the account's email, so
+// this looks it up via Cognito's Filter syntax rather than paging every user.
+export async function getEmailBySub(sub: string): Promise<string | undefined> {
+  const res = await client.send(new ListUsersCommand({
+    UserPoolId: userPoolId(),
+    Filter: `sub = "${sub}"`,
+    Limit: 1,
+  }));
+  const attrs = Object.fromEntries((res.Users?.[0]?.Attributes || []).map(a => [a.Name, a.Value]));
+  return attrs.email;
+}
+
 export async function forgotPassword(username: string): Promise<void> {
   await client.send(new ForgotPasswordCommand({ ClientId: clientId(), Username: username }));
 }

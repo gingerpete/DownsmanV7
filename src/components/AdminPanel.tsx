@@ -63,7 +63,10 @@ export default function AdminPanel({ onClose }: Props) {
           <button onClick={() => setTab('users')} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tab === 'users' ? 'bg-scout-purple text-white' : 'bg-scout-field text-gray-300 hover:bg-scout-field-border'}`}>Users</button>
           <button onClick={() => setTab('teams')} className={`rounded-lg px-4 py-2 text-sm font-medium transition ${tab === 'teams' ? 'bg-scout-purple text-white' : 'bg-scout-field text-gray-300 hover:bg-scout-field-border'}`}>Teams</button>
         </div>
-        <Button variant="secondary" onClick={() => setShowConfig(true)}>System Config</Button>
+        <div className="flex gap-2">
+          {tab === 'teams' && <Button variant="secondary" onClick={() => window.open('/api/admin/export', '_blank')}>Export CSV</Button>}
+          <Button variant="secondary" onClick={() => setShowConfig(true)}>System Config</Button>
+        </div>
       </div>
 
       {error && <Banner tone="error">{error}</Banner>}
