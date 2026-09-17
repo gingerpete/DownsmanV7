@@ -65,6 +65,18 @@ export default function AdminPanel({ onClose }: Props) {
         </div>
         <div className="flex gap-2">
           {tab === 'teams' && <Button variant="secondary" onClick={() => window.open('/api/admin/export', '_blank')}>Export CSV</Button>}
+          {tab === 'teams' && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (confirm('This includes every walker\'s name, date of birth and medical notes. The file will be a password-protected zip - only proceed if you have a genuine need for this (e.g. event safety), and share the password separately from the file itself.')) {
+                  window.open('/api/admin/export?full=true', '_blank');
+                }
+              }}
+            >
+              Full Export (incl. medical)
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => setShowConfig(true)}>System Config</Button>
         </div>
       </div>

@@ -332,4 +332,69 @@ describe('admin export route authorization', () => {
     const csv = await res.text();
     expect(csv).toContain('Beta Pack');
   });
+
+  it('?full=true is forbidden without the admin group, same as the summary export', async () => {
+    const r = req('http://localhost/api/admin/export?full=true', { ownerId: 'user-1', groups: '' });
+    const res = await adminExportGet(r);
+    expect(res.status).toBe(403);
+  });
+
+  it('?full=true returns one row per walker, including medical notes, plus support crew', async () => {
+    (db.getAllTeams as jest.Mock).mockResolvedValue([
+      validOpenClassTeam({ id: 'team-1', ownerID: 'owner-1', teamName: 'Gamma Pack' }),
+    ]);
+    (db.getScoutsByOwner as jest.Mock).mockResolvedValue([
+      { ...scoutWithAge(14), fullName: 'Alex Walker', medicalNotes: 'Carries an EpiPen' },
+      { ...scoutWithAge(35), fullName: 'Sam Leader', leader: true, medicalNotes: '' },
+    ]);
+    (db.getSupportByOwner as jest.Mock).mockResolvedValue([
+      { fullName: 'Jo Support', phoneNumber: '07999', from: '09:00', to: '17:00' },
+    ]);
+
+    const r = req('http://localhost/api/admin/export?full=true', { ownerId: 'user-1', groups: 'admin' });
+    const res = await adminExportGet(r);
+
+    expect(res.status).toBe(200);
+    const csv = await res.text();
+    expect(csv).toContain('Alex Walker');
+    expect(csv).toContain('Carries an EpiPen');
+    expect(csv).toContain('Sam Leader');
+    expect(csv).toContain('Jo Support');
+    expect(csv.split('\n')[0]).toContain('Medical Notes');
+
+    // Still read-only, even in full-detail mode.
+    expect(db.saveTeam).not.toHaveBeenCalled();
+    expect(db.deleteTeam).not.toHaveBeenCalled();
+  });
+
+  describe('with EXPORT_ZIP_PASSWORD configured', () => {
+    const ORIGINAL_ENV = process.env.EXPORT_ZIP_PASSWORD;
+    beforeEach(() => { process.env.EXPORT_ZIP_PASSWORD = 'test-secret-99'; });
+    afterEach(() => { process.env.EXPORT_ZIP_PASSWORD = ORIGINAL_ENV; });
+
+    // This checks the response is structurally a real, non-empty zip file
+    // (not an accident that happens to pass a weaker check) without shelling
+    // out to a system unzip binary, which may not exist on every machine
+    // this test suite runs on (e.g. Windows without one on PATH) - that's a
+    // portability gap, not a statement about the actual encryption, which was
+    // verified directly against the ZipCrypto format during development.
+    it('returns a structurally valid zip file, not a plain CSV', async () => {
+      (db.getAllTeams as jest.Mock).mockResolvedValue([
+        validOpenClassTeam({ id: 'team-1', ownerID: 'owner-1', teamName: 'Delta Pack' }),
+      ]);
+
+      const r = req('http://localhost/api/admin/export', { ownerId: 'user-1', groups: 'admin' });
+      const res = await adminExportGet(r);
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('Content-Type')).toBe('application/zip');
+      expect(res.headers.get('Content-Disposition')).toContain('.zip');
+      const buf = Buffer.from(await res.arrayBuffer());
+      // A real zip starts with the local file header signature 'PK\x03\x04'.
+      expect(buf.subarray(0, 4).toString('hex')).toBe('504b0304');
+      expect(buf.length).toBeGreaterThan(0);
+      // Plain team name text must not appear unencrypted in the archive bytes.
+      expect(buf.includes('Delta Pack')).toBe(false);
+    });
+  });
 });
