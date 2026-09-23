@@ -20,10 +20,23 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = getSession(req);
   const team = await req.json();
-  // A malicious ownerID here can't touch another user's row: writes always
-  // land in the caller's own partition, matching the Team table's key schema
-  // ({ownerID, id}) - see DEPLOYMENT.md / scripts/create-tables.js.
-  team.ownerID = session.ownerId;
+
+  // Fetch-and-verify, same pattern as DELETE below: an admin can edit any
+  // existing team, but the edit must never silently transfer ownership to the
+  // admin's own account - the original registrant has to stay the owner, or
+  // the team would vanish from their own "my teams" list.
+  const existing = team.id ? await getTeamById(team.id) : null;
+  if (existing && existing.ownerID !== session.ownerId) {
+    if (!session.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    team.ownerID = existing.ownerID;
+  } else {
+    // A malicious ownerID here can't touch another user's row: writes always
+    // land in the caller's own partition, matching the Team table's key schema
+    // ({ownerID, id}) - see DEPLOYMENT.md / scripts/create-tables.js.
+    team.ownerID = session.ownerId;
+  }
 
   // TeamDialog.tsx already runs this client-side before submitting, but the
   // client-side check is only a UX convenience - nothing stops a direct API call

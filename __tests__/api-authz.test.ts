@@ -153,6 +153,37 @@ describe('teams route authorization', () => {
     expect(res.status).toBe(200);
     expect(db.saveTeam).toHaveBeenCalled();
   });
+
+  it('POST is forbidden when a non-admin tries to edit a team they do not own', async () => {
+    (db.getTeamById as jest.Mock).mockResolvedValue({ id: 'team-1', ownerID: 'the-real-owner' });
+    const r = req('http://localhost/api/teams', {
+      method: 'POST',
+      ownerId: 'someone-else',
+      groups: '',
+      body: { id: 'team-1', teamName: 'Hijacked' },
+    });
+    const res = await teamsPost(r);
+    expect(res.status).toBe(403);
+    expect(db.saveTeam).not.toHaveBeenCalled();
+  });
+
+  it('POST lets an admin edit another user\'s team without transferring ownership to the admin', async () => {
+    (db.getTeamById as jest.Mock).mockResolvedValue({ id: 'team-1', ownerID: 'the-real-owner', teamName: '' });
+    const r = req('http://localhost/api/teams', {
+      method: 'POST',
+      ownerId: 'admin-user',
+      groups: 'admin',
+      body: { id: 'team-1', ownerID: 'admin-user', teamName: 'Now Has A Name' },
+    });
+    const res = await teamsPost(r);
+    expect(res.status).toBe(200);
+    // The critical assertion: ownerID stays with the original registrant,
+    // not whoever an admin happens to be signed in as while fixing it.
+    expect(db.saveTeam).toHaveBeenCalledWith(expect.objectContaining({
+      ownerID: 'the-real-owner',
+      teamName: 'Now Has A Name',
+    }));
+  });
 });
 
 describe('scouts route authorization', () => {

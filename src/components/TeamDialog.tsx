@@ -15,10 +15,11 @@ import { apiRequest, postJson, deleteJson, ApiError } from './ui/api';
 interface Props {
   team: TeamModel;
   locked: boolean;
+  adminOverride?: boolean;
   onClose: () => void;
 }
 
-export default function TeamDialog({ team, locked, onClose }: Props) {
+export default function TeamDialog({ team, locked, adminOverride = false, onClose }: Props) {
   const [model, setModel] = useState<TeamModel>({ ...team });
   const [scouts, setScouts] = useState<ScoutModel[]>([]);
   const [support, setSupport] = useState<SupportModel[]>([]);
@@ -41,7 +42,7 @@ export default function TeamDialog({ team, locked, onClose }: Props) {
   // check can miss. See CODE_REVIEW_2026-08-13.md's H2.
   const submittingRef = useRef(false);
 
-  const disabled = model.teamSubmitted || locked;
+  const disabled = (model.teamSubmitted || locked) && !adminOverride;
 
   useEffect(() => {
     if (!team.id) { setLoadingChildren(false); return; }

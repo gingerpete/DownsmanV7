@@ -7,6 +7,7 @@ import Button from './ui/Button';
 import Banner from './ui/Banner';
 import { apiRequest, postJson, ApiError } from './ui/api';
 import SystemConfig from './SystemConfig';
+import TeamDialog from './TeamDialog';
 
 interface Props { onClose: () => void; }
 
@@ -21,6 +22,7 @@ export default function AdminPanel({ onClose }: Props) {
   const [tempPassword, setTempPassword] = useState<{ username: string; password: string } | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [showConfig, setShowConfig] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<TeamModel | null>(null);
 
   const load = useCallback(async () => {
     setError('');
@@ -147,11 +149,12 @@ export default function AdminPanel({ onClose }: Props) {
                   return (
                     <tr key={t.id} className="border-b border-scout-field-border/60">
                       <td className="p-2">{t.leaderName}</td>
-                      <td className="p-2">{t.teamName}</td>
+                      <td className="p-2">{t.teamName || <span className="italic text-gray-500">(no team name)</span>}</td>
                       <td className="p-2">{t.hikeClass || '-'}</td>
                       <td className="p-2">{t.paymentRecieved ? 'Yes' : `£${t.paymentAmount}`}</td>
                       <td className="p-2">{t.teamSubmitted ? 'Yes' : 'No'}</td>
                       <td className="p-2 text-right space-x-3">
+                        <button onClick={() => setEditingTeam(t)} className={`${actionLinkClass} text-emerald-400`}>Edit</button>
                         <button disabled={busy} onClick={() => adminAction(key, 'togglePaid', { team: t })} className={`${actionLinkClass} text-sky-400`}>Toggle Paid</button>
                         <button disabled={busy} onClick={() => adminAction(key, 'toggleSubmitted', { team: t })} className={`${actionLinkClass} text-amber-400`}>Toggle Submitted</button>
                         <button disabled={busy} onClick={() => adminAction(key, 'deleteTeam', { team: t })} className={`${actionLinkClass} text-red-400`}>Delete</button>
@@ -166,6 +169,14 @@ export default function AdminPanel({ onClose }: Props) {
       )}
 
       {showConfig && <SystemConfig onClose={() => setShowConfig(false)} />}
+      {editingTeam && (
+        <TeamDialog
+          team={editingTeam}
+          locked={false}
+          adminOverride
+          onClose={() => { setEditingTeam(null); load(); }}
+        />
+      )}
     </Modal>
   );
 }
